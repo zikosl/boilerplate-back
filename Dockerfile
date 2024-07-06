@@ -11,6 +11,7 @@ RUN corepack enable
 
 RUN pnpm install
 
+RUN npx puppeteer browsers install chrome  
 
 COPY package*.json ./prisma/
 
