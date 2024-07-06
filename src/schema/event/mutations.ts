@@ -3,9 +3,10 @@ import { Context } from "../../context"
 import { GraphQLError } from 'graphql'
 import { sign, verify } from "jsonwebtoken"
 import { generateRandomPassword } from "../../utils/password"
-import { sendEmail } from "../../utils/mailer"
+import { sendEmail, sendEmailAttached } from "../../utils/mailer"
 import dayjs from "dayjs"
 import { getUserId } from "../../utils"
+import { genTicket, generatePdfTicket } from "../../utils/pdf"
 
 
 
@@ -24,6 +25,7 @@ const Mutation = extendType({
             },
             resolve: async (_parent, args, context: Context) => {
                 try {
+                    let password = generateRandomPassword(18)
                     let state = 0
                     const event = await context.prisma.event.findUnique({
                         where: {
@@ -42,7 +44,6 @@ const Mutation = extendType({
                         }
                     })
                     if (!user) {
-                        let password = generateRandomPassword(18)
                         user = await context.prisma.user.create({
                             data: {
                                 email: args.email,
@@ -57,12 +58,6 @@ const Mutation = extendType({
                         }, process.env.EMAIL_SECRET, { expiresIn: '24h' });
 
                         try {
-                            await sendEmail({
-                                url: process.env.NEXT_URL + `/token/${emailToken}`,
-                                email: user.email,
-                                additional: password
-                            });
-
                             await context.prisma.user.update({
                                 data: {
                                     lastRequest: dayjs().format()
@@ -76,7 +71,7 @@ const Mutation = extendType({
                             state = 2
                         }
                     }
-                    await context.prisma.clientTicket.create({
+                    const ticket = await context.prisma.clientTicket.create({
                         data: {
                             firstname: args.firstname,
                             eventId: event.id,
@@ -86,19 +81,48 @@ const Mutation = extendType({
                             userId: user.id
                         }
                     })
+                    let htmlContent = genTicket({
+                        firstname: ticket.firstname,
+                        lastname: ticket.lastname,
+                        event: event.name,
+                        date: ticket.date
+                    }, ticket.id)
+                    console.log(htmlContent)
+                    const ticketFile = await generatePdfTicket(htmlContent)
+                    console.log(ticketFile)
                     if (state == 0) {
+                        await sendEmailAttached({
+                            url: "",
+                            email: user.email,
+                            additional: "",
+                            file: ticketFile
+                        });
                         return "your ticket created and added to your account"
+
                     }
                     else {
                         if (state == 1) {
+                            await sendEmailAttached({
+                                url: process.env.NEXT_URL + `/token/${emailToken}`,
+                                email: user.email,
+                                additional: password,
+                                file: ticketFile
+                            });
                             return "your account and ticket created and sent to your email"
                         }
                         else {
+                            await sendEmailAttached({
+                                url: "",
+                                email: user.email,
+                                additional: "",
+                                file: ticketFile
+                            });
                             return "ticket sent to your email"
                         }
                     }
                 }
                 catch (e) {
+                    console.log(e)
                     return new GraphQLError("Something wrong")
                 }
             },

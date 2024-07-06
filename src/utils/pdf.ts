@@ -1,4 +1,45 @@
-<!DOCTYPE html>
+import dayjs from "dayjs";
+
+const puppeteer = require('puppeteer');
+// const fs = require('fs');
+
+export const generatePdfTicket = async (html) => {
+    // Create a browser instance
+    const browser = await puppeteer.launch();
+
+    // Create a new page
+    const page = await browser.newPage();
+
+    //Get HTML content from HTML file
+    // const html = fs.readFileSync(htmlContent, 'utf-8');
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    // await page.waitForFunction('window.jsLoaded === true');
+
+    // To reflect CSS used for screens instead of print
+    await page.emulateMediaType('screen');
+
+
+    const pdf = await page.pdf({
+        // path: 'result.pdf',
+        margin: { top: '100px', right: '50px', bottom: '100px', left: '50px' },
+        printBackground: true,
+        format: 'A4',
+    });
+    // Close the browser instance
+    browser.close();
+    return pdf
+};
+
+interface Event {
+    event: string
+    date: Date
+    firstname: string
+    lastname: string
+}
+
+export const genTicket = (data: Event, id: number) => {
+    return `
+    <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -117,8 +158,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <span class="title">Pirate Ship event</span>
-            <span class="subtitle">Jul 15, 2024</span>
+            <span class="title">${data.event}</span>
+            <span class="subtitle">${dayjs(data.date).format("MMM DD, YYYY")}</span>
             <div class="separator"></div>
         </div>
         <div class="row">
@@ -133,7 +174,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td>EVT_4</td>
+                                <td>EVT_${id}</td>
                                 <td>General Access</td>
                             </tr>
                         </tbody>
@@ -142,7 +183,7 @@
                 <div class="separator"></div>
                 <div class="info">
                     <div class="title">Benificier:</div>
-                    <div class="subtitle">zakaria slimi</div>
+                    <div class="subtitle">${data.firstname} ${data.lastname}</div>
                 </div>
             </div>
             <div class="col">
@@ -154,7 +195,7 @@
     </div>
     <script type="text/javascript">
         new QRCode(document.getElementById("code"), {
-            text: "http://jindo.dev.naver.com/collie",
+            text: ${JSON.stringify(data)},
             width: 128,
             height: 128,
             colorDark: "#313131",
@@ -165,3 +206,5 @@
 </body>
 
 </html>
+    `
+} 
