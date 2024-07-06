@@ -1,6 +1,10 @@
 FROM node:20.11.0-bullseye
 
 # Create app directory
+
+RUN useradd -ms /bin/bash maper
+USER maper
+
 WORKDIR /app
 
 
