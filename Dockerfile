@@ -1,10 +1,7 @@
 FROM node:20.11.0-bullseye
 
 # Create app directory
-
-
 WORKDIR /app
-
 
 COPY package*.json ./
 
@@ -20,19 +17,7 @@ RUN apt-get update \
 
 RUN corepack enable
 
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 maper
-
-RUN chown -R maper:nodejs /app
-RUN chmod 755 /app
-
-
-USER maper
-
 RUN pnpm install
-
-RUN npx puppeteer browsers install chrome  
 
 COPY package*.json ./prisma/
 
