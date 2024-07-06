@@ -2,8 +2,6 @@ FROM node:20.11.0-bullseye
 
 # Create app directory
 
-RUN useradd -ms /bin/bash maper
-USER maper
 
 WORKDIR /app
 
@@ -11,16 +9,26 @@ WORKDIR /app
 COPY package*.json ./
 
 
-RUN sudo apt-get update \
-    && sudo apt-get install -y wget gnupg \
-    && sudo wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - \
-    && sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-    && sudo apt-get update \
-    && sudo apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 \
+RUN apt-get update \
+    && apt-get install -y wget gnupg \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 \
     --no-install-recommends \
-    && sudo rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable
+
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 maper
+
+RUN chown -R maper:nodejs /app
+RUN chmod 755 /app
+
+
+USER maper
 
 RUN pnpm install
 
