@@ -11,9 +11,6 @@ RUN corepack enable
 
 RUN pnpm install
 
-RUN apt-get update
-
-RUN apt-get -qq -y install wkhtmltopdf
 
 COPY package*.json ./prisma/
 

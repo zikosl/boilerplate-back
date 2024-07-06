@@ -45,6 +45,21 @@ export const Query = extendType({
                 })
             },
         })
+
+        t.boolean('printClientTicket', {
+            args: {
+                id: nonNull(intArg())
+            },
+            resolve: async (_parent, args, context: Context) => {
+                const userId = getUserId(context)
+                const ticket = await context.prisma.clientTicket.findFirst({
+                    where: {
+                        userId: userId,
+                        id: args.id
+                    }
+                })
+            },
+        })
     },
 })
 
